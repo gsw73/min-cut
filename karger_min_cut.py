@@ -3,6 +3,7 @@ import re
 import random
 import pprint
 from copy import deepcopy
+from time import perf_counter as pc
 
 class RowVError( Exception ):
     def __init__( self, value ):
@@ -71,12 +72,14 @@ def usage():
     print( 'Usage:' )
     print( 'my_prompt>  python3 karger_min_cut.py <filename>' )
     print( 'my_prompt>  python3 karger_min_cut.py -nsquared <filename>' )
+    print( 'my_prompt>  python3 karger_min_cut.py -<loops> <filename>' )
 
 def main():
     graph_st = []
     graph = []
     run_multiple = 0
     theMinimumCut = 0
+    loops = 0
 
     if len( sys.argv ) < 2:
         usage()
@@ -90,6 +93,14 @@ def main():
         if re.match( '-nsquared', switch ):
             run_multiple = 1
             sys.argv.remove( '-nsquared' )
+            break
+
+    for switch in sys.argv:
+        m = re.match( '-(\d+)', switch )
+        if m:
+            loops = int( m.group(1) )
+            sw = '-' + str( loops )
+            sys.argv.remove( sw )
             break
 
     inputFileName = sys.argv[ 1 ]
@@ -109,13 +120,18 @@ def main():
         graph.append( adjacents )
 
     # starting graph
-    pprint.pprint( graph )
+    pprint.pprint( graph, width=200 )
 
     # call min-cut algorithm
-    if run_multiple:
+    if  loops:
+        trials = loops
+    elif run_multiple:
         trials = len( graph ) * len( graph )
     else:
         trials = 1
+
+    # time it
+    t0 = pc()
 
     for i in range( trials ):
         trial_graph = deepcopy( graph )
@@ -124,12 +140,14 @@ def main():
         if i == 0 or currentMin < theMinimumCut:
             theMinimumCut = currentMin
 
+    t1 = pc()
+
     # the number of edges between the two remaining end point is the min cut
 
     if trials == 1:
         print( 'graph = {}; minimum cut = {:d}'.format( graph, theMinimumCut ) )
     else:
-        print( 'minimum cut = {:d}'.format( theMinimumCut ) )
+        print( 'minimum cut = {:d}; elapsed time = {:f}'.format( theMinimumCut, t1 - t0 ) )
 
     return
 
